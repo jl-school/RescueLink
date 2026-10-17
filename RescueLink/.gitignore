@@ -1,0 +1,17 @@
+# Maven build output
+target/
+
+# SQLite database files (may contain real personal data - never publish)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
