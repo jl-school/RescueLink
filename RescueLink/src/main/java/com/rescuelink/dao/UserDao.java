@@ -31,10 +31,10 @@ public class UserDao {
 
     // ---------------------------------------------------------------- create
 
-    /** Public self-registration: never an administrator, always PENDING. */
+    /** Public self-registration for any role: always PENDING until an administrator approves it. */
     public User register(NewAccount account) {
-        if (account.role() == Role.ADMINISTRATOR || account.status() != AccountStatus.PENDING) {
-            throw new IllegalArgumentException("Self-registration must be a non-administrator PENDING account.");
+        if (account.status() != AccountStatus.PENDING) {
+            throw new IllegalArgumentException("Self-registration must create a PENDING account.");
         }
         return DatabaseConnection.inTransaction(conn -> insertAndLog(conn, account, "ACCOUNT_REGISTERED"));
     }

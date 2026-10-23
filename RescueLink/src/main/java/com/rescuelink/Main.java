@@ -2,33 +2,36 @@ package com.rescuelink;
 
 import com.rescuelink.dao.ActivityLogDao;
 import com.rescuelink.dao.DataAccessException;
-import com.rescuelink.dao.DatabaseConnection;
+import com.rescuelink.dao.DatabaseInitializer;
 import com.rescuelink.dao.UserDao;
-import com.rescuelink.service.UserService;
-import com.rescuelink.ui.AuthenticationMenu;
-import com.rescuelink.ui.MainMenu;
-import com.rescuelink.ui.UserManagementMenu;
-import com.rescuelink.ui.UserMenu;
+import com.rescuelink.ui.Authentication;
 
-/** Application entry point: prepares the database, wires the layers together, and starts the menu. */
+import java.util.Scanner;
+
+/**
+ * Single entry point. Flow: initialize database -> create DAOs and utilities -> Authentication.start().
+ * Menus, login, registration, and role routing all live in ui/Authentication.
+ */
 public class Main {
 
+    private static final String VERSION = "1.1";
+
     public static void main(String[] args) {
+        // 1. Initialize the database (creates any missing tables) before any menu appears.
         try {
-            DatabaseConnection.initializeDatabase();
+            DatabaseInitializer.initialize();
         } catch (DataAccessException e) {
             System.err.println("Startup failed: " + e.getMessage());
             System.exit(1);
         }
 
+        // 2. Create the shared DAOs and the single Scanner.
         ActivityLogDao activityLogDao = new ActivityLogDao();
         UserDao userDao = new UserDao();
-        UserService userService = new UserService(userDao, activityLogDao);
+        Scanner scanner = new Scanner(System.in);
 
-        UserManagementMenu userManagementMenu = new UserManagementMenu(userService);
-        UserMenu userMenu = new UserMenu(userService, userManagementMenu);
-        AuthenticationMenu authenticationMenu = new AuthenticationMenu(userService);
-
-        new MainMenu(userService, authenticationMenu, userMenu).run();
+        // 3. Hand control to the authentication handler.
+        new Authentication(userDao, activityLogDao, scanner, VERSION).start();
+        scanner.close();
     }
 }
