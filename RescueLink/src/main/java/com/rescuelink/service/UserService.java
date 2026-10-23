@@ -85,8 +85,12 @@ public class UserService {
 
     // --------------------------------------------------- account management
 
-    public List<User> listAllUsers(User actor) {
-        return userDao.findAll(actor);
+    public List<User> getAllUsers(User actor) {
+        return userDao.getAllUsers(actor);
+    }
+
+    public List<User> getPendingUsers(User actor) {
+        return userDao.getPendingUsers(actor);
     }
 
     public List<User> listUsersByStatus(User actor, AccountStatus status) {
@@ -95,6 +99,10 @@ public class UserService {
 
     public void activateAccount(User actor, int targetUserId) {
         userDao.updateAccountStatus(actor, targetUserId, AccountStatus.ACTIVE);
+    }
+
+    public void approveUser(User actor, int targetUserId) {
+        userDao.approveUser(actor, targetUserId);
     }
 
     public void deactivateAccount(User actor, int targetUserId) {

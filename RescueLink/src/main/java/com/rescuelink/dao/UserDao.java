@@ -81,10 +81,20 @@ public class UserDao {
         return DatabaseConnection.withConnection(this::activeAdministratorExists);
     }
 
-    public List<User> findAll(User actor) {
+    public List<User> getAllUsers(User actor) {
         return DatabaseConnection.withConnection(conn -> {
             requirePermission(conn, actor, Permission.MANAGE_USERS);
             return queryUsers(conn, "SELECT " + COLUMNS + " FROM Users ORDER BY user_id", null);
+        });
+    }
+
+    /** Returns every pending registration across all four RescueLink roles. */
+    public List<User> getPendingUsers(User actor) {
+        return DatabaseConnection.withConnection(conn -> {
+            requirePermission(conn, actor, Permission.MANAGE_USERS);
+            return queryUsers(conn,
+                    "SELECT " + COLUMNS + " FROM Users WHERE account_status = ? ORDER BY user_id",
+                    AccountStatus.PENDING.name());
         });
     }
 
@@ -123,6 +133,30 @@ public class UserDao {
             activityLogDao.record(conn, admin.userId(), action, "Users", targetUserId,
                     "Status of '" + target.username() + "' changed from "
                             + target.accountStatus() + " to " + newStatus);
+            return null;
+        });
+    }
+
+    /** Approves a pending registration by activating it, preserving the ERD's account_status values. */
+    public void approveUser(User actor, int targetUserId) {
+        DatabaseConnection.inTransaction(conn -> {
+            User admin = requirePermission(conn, actor, Permission.MANAGE_USERS);
+            User target = findById(conn, targetUserId).orElseThrow(
+                    () -> new IllegalArgumentException("No user with ID " + targetUserId + " exists."));
+            if (target.accountStatus() != AccountStatus.PENDING) {
+                throw new IllegalStateException("Only PENDING accounts can be approved.");
+            }
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE Users SET account_status = ? WHERE user_id = ? AND account_status = ?")) {
+                ps.setString(1, AccountStatus.ACTIVE.name());
+                ps.setInt(2, targetUserId);
+                ps.setString(3, AccountStatus.PENDING.name());
+                if (ps.executeUpdate() != 1) {
+                    throw new IllegalStateException("The account is no longer pending approval.");
+                }
+            }
+            activityLogDao.record(conn, admin.userId(), "ACCOUNT_ACTIVATED", "Users", targetUserId,
+                    "Account '" + target.username() + "' approved; status changed from PENDING to ACTIVE");
             return null;
         });
     }
