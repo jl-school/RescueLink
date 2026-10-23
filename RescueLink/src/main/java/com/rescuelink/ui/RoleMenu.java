@@ -5,44 +5,51 @@ import com.rescuelink.model.User;
 import com.rescuelink.service.UserService;
 import com.rescuelink.util.DateTimeUtil;
 
-/** Home screen shown after login. Logging out returns to the main menu (it does not exit the program). */
-public class UserMenu {
+import java.util.List;
 
-    private final UserService userService;
-    private final UserManagementMenu userManagementMenu;
+/**
+ * Base class for the role-based home menus (template method pattern).
+ * It draws the shared parts (header, profile, sign out); each subclass adds only the options
+ * that belong to its role. Logging out returns to the caller (Authentication), not exit.
+ */
+public abstract class RoleMenu {
 
-    public UserMenu(UserService userService, UserManagementMenu userManagementMenu) {
+    protected final UserService userService;
+    protected final ConsoleInput input;
+
+    protected RoleMenu(UserService userService, ConsoleInput input) {
         this.userService = userService;
-        this.userManagementMenu = userManagementMenu;
+        this.input = input;
     }
 
-    public void run(User user) {
+    /** Options specific to this role, shown as options 2, 3, ... */
+    protected abstract List<String> roleOptions(User user);
+
+    /** Runs the role option at the given zero-based position in {@link #roleOptions}. */
+    protected abstract void handleRoleOption(User user, int index);
+
+    public final void run(User user) {
         while (true) {
             TerminalUi.banner("YOUR RESCUELINK", user.fullName() + "  ·  " + user.role().getDisplayName());
             System.out.println("  " + user.role().getDescription());
             System.out.println("  Role modules for households, incidents and relief are coming soon.");
             System.out.println();
             System.out.println("  1  View my profile");
-            if (userService.canManageUsers(user)) {
-                System.out.println("  2  Manage accounts");
+            List<String> options = roleOptions(user);
+            for (int i = 0; i < options.size(); i++) {
+                System.out.println("  " + (i + 2) + "  " + options.get(i));
             }
             System.out.println("  0  Sign out");
-            int choice = ConsoleInput.readInt("  Select an option: ", 0, 2);
+            int choice = input.readInt("  Select an option: ", 0, options.size() + 1);
             try {
-                switch (choice) {
-                    case 1 -> showProfile(user);
-                    case 2 -> {
-                        if (userService.canManageUsers(user)) {
-                            userManagementMenu.run(user);
-                        } else {
-                            System.out.println("That option is not available for your role.");
-                        }
-                    }
-                    default -> {
-                        userService.logout(user);
-                        System.out.println("You have been logged out.");
-                        return;
-                    }
+                if (choice == 0) {
+                    userService.logout(user);
+                    System.out.println("You have been logged out.");
+                    return;
+                } else if (choice == 1) {
+                    showProfile(user);
+                } else {
+                    handleRoleOption(user, choice - 2);
                 }
             } catch (DataAccessException e) {
                 System.out.println("Error: " + e.getMessage());

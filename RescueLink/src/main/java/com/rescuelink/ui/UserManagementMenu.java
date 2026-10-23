@@ -13,9 +13,11 @@ import java.util.List;
 public class UserManagementMenu {
 
     private final UserService userService;
+    private final ConsoleInput input;
 
-    public UserManagementMenu(UserService userService) {
+    public UserManagementMenu(UserService userService, ConsoleInput input) {
         this.userService = userService;
+        this.input = input;
     }
 
     public void run(User admin) {
@@ -26,14 +28,14 @@ public class UserManagementMenu {
             System.out.println("  3  Approve an account");
             System.out.println("  4  Deactivate an account");
             System.out.println("  0  Return home");
-            int choice = ConsoleInput.readInt("  Select an option: ", 0, 4);
+            int choice = input.readInt("  Select an option: ", 0, 4);
             try {
                 switch (choice) {
                     case 1 -> printUsers(userService.listAllUsers(admin));
                     case 2 -> printUsers(userService.listUsersByStatus(admin, AccountStatus.PENDING));
                     case 3 -> {
                         printUsers(userService.listUsersByStatus(admin, AccountStatus.PENDING));
-                        int id = ConsoleInput.readInt("User ID to activate (0 to cancel): ", 0, Integer.MAX_VALUE);
+                        int id = input.readInt("User ID to activate (0 to cancel): ", 0, Integer.MAX_VALUE);
                         if (id != 0) {
                             userService.activateAccount(admin, id);
                             System.out.println("Account approved and activated.");
@@ -41,7 +43,7 @@ public class UserManagementMenu {
                     }
                     case 4 -> {
                         printUsers(userService.listUsersByStatus(admin, AccountStatus.ACTIVE));
-                        int id = ConsoleInput.readInt("User ID to deactivate (0 to cancel): ", 0, Integer.MAX_VALUE);
+                        int id = input.readInt("User ID to deactivate (0 to cancel): ", 0, Integer.MAX_VALUE);
                         if (id != 0) {
                             userService.deactivateAccount(admin, id);
                             System.out.println("Account access deactivated.");

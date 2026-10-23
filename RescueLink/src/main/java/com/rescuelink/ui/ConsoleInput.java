@@ -3,26 +3,30 @@ package com.rescuelink.ui;
 import java.io.Console;
 import java.util.Scanner;
 
-/** Safe console input helpers: invalid input never crashes the program, it just asks again. */
+/**
+ * Safe console input helpers: invalid input never crashes the program, it just asks again.
+ * Wraps the single Scanner created in Main so no menu ever opens a second one on System.in.
+ */
 public final class ConsoleInput {
 
-    private static final Scanner SCANNER = new Scanner(System.in);
+    private final Scanner scanner;
 
-    private ConsoleInput() {
+    public ConsoleInput(Scanner scanner) {
+        this.scanner = scanner;
     }
 
-    public static String readLine(String prompt) {
+    public String readLine(String prompt) {
         System.out.print(prompt);
-        if (!SCANNER.hasNextLine()) {
+        if (!scanner.hasNextLine()) {
             System.out.println();
             System.out.println("Input closed. Exiting RescueLink.");
             System.exit(0);
         }
-        return SCANNER.nextLine();
+        return scanner.nextLine();
     }
 
     /** Reads an integer between min and max (inclusive), repeating until valid. */
-    public static int readInt(String prompt, int min, int max) {
+    public int readInt(String prompt, int min, int max) {
         while (true) {
             String text = readLine(prompt).trim();
             try {
@@ -37,7 +41,7 @@ public final class ConsoleInput {
         }
     }
 
-    public static boolean readYesNo(String prompt) {
+    public boolean readYesNo(String prompt) {
         while (true) {
             String text = readLine(prompt + " (y/n): ").trim().toLowerCase();
             if (text.equals("y") || text.equals("yes")) {
@@ -51,7 +55,7 @@ public final class ConsoleInput {
     }
 
     /** Hides typing when a real console exists. IntelliJ's Run window has none, so input is visible there. */
-    public static String readPassword(String prompt) {
+    public String readPassword(String prompt) {
         Console console = System.console();
         if (console != null) {
             char[] chars = console.readPassword(prompt);

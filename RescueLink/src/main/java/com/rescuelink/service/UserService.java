@@ -48,8 +48,8 @@ public class UserService {
     /** Public registration. The new account is PENDING until an administrator activates it. */
     public User register(String fullName, String username, String password, Role role, String contact)
             throws AuthException {
-        if (role == null || role == Role.ADMINISTRATOR) {
-            throw new AuthException("Please choose Response Personnel, Relief Coordinator, or Resident.");
+        if (role == null) {
+            throw new AuthException("Please choose a role.");
         }
         NewAccount account = buildAccount(fullName, username, password, contact, role, AccountStatus.PENDING);
         return userDao.register(account);
