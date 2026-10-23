@@ -30,7 +30,7 @@ public abstract class RoleMenu {
 
     public final void run(User user) {
         while (true) {
-            TerminalUi.banner("YOUR RESCUELINK", user.fullName() + "  ·  " + user.role().getDisplayName());
+            TerminalUi.banner("YOUR RESCUELINK", user.fullName() + "  |  " + user.role().getDisplayName());
             System.out.println("  " + user.role().getDescription());
             System.out.println("  Role modules for households, incidents and relief are coming soon.");
             System.out.println();

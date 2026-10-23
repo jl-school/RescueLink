@@ -3,7 +3,7 @@ package com.rescuelink.ui;
 /** Shared formatting for the RescueLink console screens. */
 final class TerminalUi {
 
-    private static final String RULE = "════════════════════════════════════════════════════════════";
+    private static final String RULE = "============================================================";
 
     private TerminalUi() { }
 
@@ -19,14 +19,14 @@ final class TerminalUi {
 
     static void section(String title) {
         System.out.println();
-        System.out.println("── " + title + " ──────────────────────────────────────────────");
+        System.out.println("-- " + title + " ----------------------------------------------");
     }
 
     static String status(String status) {
         return switch (status) {
-            case "ACTIVE" -> "● ACTIVE";
-            case "PENDING" -> "◷ PENDING";
-            case "DEACTIVATED" -> "○ DEACTIVATED";
+            case "ACTIVE" -> "[ACTIVE]";
+            case "PENDING" -> "[PENDING]";
+            case "DEACTIVATED" -> "[DEACTIVATED]";
             default -> status;
         };
     }

@@ -23,5 +23,12 @@ INSERT INTO users (id, name, city) VALUES (1, 'Alice', 'Berlin') ON CONFLICT DO 
 INSERT INTO users (id, name, city) VALUES (2, 'Bob', 'Tokyo') ON CONFLICT DO NOTHING;
 INSERT INTO users (id, name, city) VALUES (3, 'Carol', 'Paris') ON CONFLICT DO NOTHING;</init-script>
     </data-source>
+    <data-source source="LOCAL" name="rescuelink" uuid="7c12554e-62a5-4314-b45a-fdd00d177fae">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/data/rescuelink.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
