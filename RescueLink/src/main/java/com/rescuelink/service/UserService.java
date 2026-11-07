@@ -72,14 +72,14 @@ public class UserService {
             }
         }
         activityLogDao.record(user.userId(), "LOGIN", "Users", user.userId(),
-                "'" + user.username() + "' logged in");
+                "User '" + user.username() + "' (ID: " + user.userId() + ") logged in.");
         return user;
     }
 
     public void logout(User user) {
         if (user != null) {
             activityLogDao.record(user.userId(), "LOGOUT", "Users", user.userId(),
-                    "'" + user.username() + "' logged out");
+                    "User '" + user.username() + "' (ID: " + user.userId() + ") logged out.");
         }
     }
 
