@@ -14,7 +14,7 @@ import java.util.Scanner;
  */
 public class Main {
 
-    private static final String VERSION = "1.1";
+    private static final String VERSION = "1.3";
 
     public static void main(String[] args) {
         // 1. Initialize the database (creates any missing tables) before any menu appears.
