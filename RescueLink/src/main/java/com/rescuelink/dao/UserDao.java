@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,20 +81,10 @@ public class UserDao {
         return DatabaseConnection.withConnection(this::activeAdministratorExists);
     }
 
-    public List<User> getAllUsers(User actor) {
+    public List<User> findAll(User actor) {
         return DatabaseConnection.withConnection(conn -> {
             requirePermission(conn, actor, Permission.MANAGE_USERS);
             return queryUsers(conn, "SELECT " + COLUMNS + " FROM Users ORDER BY user_id", null);
-        });
-    }
-
-    /** Returns every pending registration across all four RescueLink roles. */
-    public List<User> getPendingUsers(User actor) {
-        return DatabaseConnection.withConnection(conn -> {
-            requirePermission(conn, actor, Permission.MANAGE_USERS);
-            return queryUsers(conn,
-                    "SELECT " + COLUMNS + " FROM Users WHERE account_status = ? ORDER BY user_id",
-                    AccountStatus.PENDING.name());
         });
     }
 
@@ -134,61 +123,6 @@ public class UserDao {
             activityLogDao.record(conn, admin.userId(), action, "Users", targetUserId,
                     "Status of '" + target.username() + "' changed from "
                             + target.accountStatus() + " to " + newStatus);
-            return null;
-        });
-    }
-
-    /** Updates an account's RescueLink role and status together, with permission and audit checks. */
-    public void updateUserRoleAndStatus(User actor, int targetUserId, String newRole, String newStatus) {
-        Role role = parseRole(newRole);
-        AccountStatus status = parseStatus(newStatus);
-        DatabaseConnection.inTransaction(conn -> {
-            User admin = requirePermission(conn, actor, Permission.MANAGE_USERS);
-            User target = findById(conn, targetUserId).orElseThrow(
-                    () -> new IllegalArgumentException("No user with ID " + targetUserId + " exists."));
-            if (target.userId() == admin.userId()) {
-                throw new IllegalStateException("Modifying the currently active admin account is restricted.");
-            }
-            if (target.role() == role && target.accountStatus() == status) {
-                throw new IllegalStateException("The account already has that role and status.");
-            }
-
-            String sql = "UPDATE Users SET role = ?, account_status = ? WHERE user_id = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, role.name());
-                ps.setString(2, status.name());
-                ps.setInt(3, targetUserId);
-                if (ps.executeUpdate() != 1) {
-                    throw new IllegalStateException("The account could not be updated.");
-                }
-            }
-            activityLogDao.record(conn, admin.userId(), "ACCOUNT_ROLE_STATUS_UPDATED", "Users", targetUserId,
-                    "Account '" + target.username() + "' changed from " + target.role() + "/"
-                            + target.accountStatus() + " to " + role + "/" + status);
-            return null;
-        });
-    }
-
-    /** Approves a pending registration by activating it, preserving the ERD's account_status values. */
-    public void approveUser(User actor, int targetUserId) {
-        DatabaseConnection.inTransaction(conn -> {
-            User admin = requirePermission(conn, actor, Permission.MANAGE_USERS);
-            User target = findById(conn, targetUserId).orElseThrow(
-                    () -> new IllegalArgumentException("No user with ID " + targetUserId + " exists."));
-            if (target.accountStatus() != AccountStatus.PENDING) {
-                throw new IllegalStateException("Only PENDING accounts can be approved.");
-            }
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE Users SET account_status = ? WHERE user_id = ? AND account_status = ?")) {
-                ps.setString(1, AccountStatus.ACTIVE.name());
-                ps.setInt(2, targetUserId);
-                ps.setString(3, AccountStatus.PENDING.name());
-                if (ps.executeUpdate() != 1) {
-                    throw new IllegalStateException("The account is no longer pending approval.");
-                }
-            }
-            activityLogDao.record(conn, admin.userId(), "ACCOUNT_ACTIVATED", "Users", targetUserId,
-                    "Account '" + target.username() + "' approved; status changed from PENDING to ACTIVE");
             return null;
         });
     }
@@ -254,26 +188,6 @@ public class UserDao {
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
-        }
-    }
-
-    private static Role parseRole(String value) {
-        try {
-            return Role.valueOf((value == null ? "" : value.trim()).toUpperCase(Locale.ROOT));
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Invalid role. Choose one of the RescueLink roles.");
-        }
-    }
-
-    private static AccountStatus parseStatus(String value) {
-        String normalized = (value == null ? "" : value.trim()).toUpperCase(Locale.ROOT);
-        if (normalized.equals("APPROVED")) {
-            normalized = AccountStatus.ACTIVE.name();
-        }
-        try {
-            return AccountStatus.valueOf(normalized);
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Invalid status. Choose PENDING, APPROVED/ACTIVE, or DEACTIVATED.");
         }
     }
 
